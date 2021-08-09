@@ -34,6 +34,7 @@ local defaults = {
     port        = 4222,
     tcp_nodelay = true,
     path        = nil,
+    fd          = -1,
 }
 
 -- ### Create a properly formatted inbox subject.
