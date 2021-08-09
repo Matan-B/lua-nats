@@ -232,16 +232,20 @@ end
 -- ### Socket connection methods ###
 
 local function connect_tcp(socket, parameters)
-    local host, port = parameters.host, tonumber(parameters.port)
-    if parameters.timeout then
-        socket:settimeout(parameters.timeout, 't')
+    local host, port, fd = parameters.host, tonumber(parameters.port), tonumber(parameters.fd)
+    if fd ~= -1 then
+        socket:setfd(fd)
+    else      
+        if parameters.timeout then
+            socket:settimeout(parameters.timeout, 't')
+        end
+        
+        local ok, err = socket:connect(host, port)
+        if not ok then
+            nats.error('could not connect to '..host..':'..port..' ['..err..']')
+        end
+        socket:setoption('tcp-nodelay', parameters.tcp_nodelay)
     end
-
-    local ok, err = socket:connect(host, port)
-    if not ok then
-        nats.error('could not connect to '..host..':'..port..' ['..err..']')
-    end
-    socket:setoption('tcp-nodelay', parameters.tcp_nodelay)
     return socket
 end
 
@@ -286,8 +290,8 @@ function nats.connect(...)
     if #args == 1 then
         parameters = args[1]
     elseif #args > 1 then
-        local host, port, timeout = unpack(args)
-        parameters = { host = host, port = port, timeout = tonumber(timeout) }
+        local host, port, timeout, fd = unpack(args)
+        parameters = { host = host, port = port, timeout = tonumber(timeout), fd = tonumber(fd) }
     end
 
     local commands = nats.commands or {}
